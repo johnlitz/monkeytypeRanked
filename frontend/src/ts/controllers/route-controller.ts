@@ -144,6 +144,31 @@ const routes: Route[] = [
       });
     },
   },
+  {
+    path: "/ranked",
+    load: async (_params, options) => {
+      await PageController.change("ranked", options);
+    },
+  },
+  {
+    path: "/ranked-leaderboard",
+    load: async (_params, options) => {
+      await PageController.change("rankedLeaderboard", options);
+    },
+  },
+  {
+    path: "/ranked-profile/:uid",
+    load: async (params, options) => {
+      await PageController.change("rankedProfile", {
+        ...options,
+        force: true,
+        params: {
+          uid: params["uid"] as string,
+        },
+        data: options.data,
+      });
+    },
+  },
 ];
 
 export async function navigate(

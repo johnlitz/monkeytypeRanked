@@ -998,7 +998,6 @@ export async function updateInbox(
 ): Promise<void> {
   const deleteSet = [...new Set(mailToDelete)];
 
-  //we don't need to read mails that are going to be deleted because
   //Rewards will be claimed on unread mails on deletion
   const readSet = [...new Set(mailToRead)].filter(
     (it) => !deleteSet.includes(it)
@@ -1222,3 +1221,10 @@ async function updateUser(
       error.stack
     );
 }
+
+import { getRankedPlayersCollection, RankedPlayer } from "./rankedPlayer";
+
+export async function getRankedProfile(uid: string): Promise<RankedPlayer | null> {
+  return getRankedPlayersCollection().findOne({ uid });
+}
+

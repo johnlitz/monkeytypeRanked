@@ -90,3 +90,22 @@ export function setTestRestarting(val: boolean): void {
 export function setResultVisible(val: boolean): void {
   resultVisible = val;
 }
+
+
+export type TestData = {
+  matchId?: string;
+  wordList?: string[];
+  wordListSeed?: string;
+  ranked?: boolean;
+};
+
+let testData: TestData | null = null;
+
+export function getTestData(): TestData | null {
+  return testData;
+}
+
+export function setTestData(data: TestData | null): void {
+  testData = data;
+}
+

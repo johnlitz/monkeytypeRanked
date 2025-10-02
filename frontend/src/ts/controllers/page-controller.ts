@@ -11,6 +11,10 @@ import * as PageProfile from "../pages/profile";
 import * as PageProfileSearch from "../pages/profile-search";
 import * as Page404 from "../pages/404";
 import * as PageLeaderboards from "../pages/leaderboards";
+import * as PageRanked from "../pages/ranked";
+import * as PageRankedLeaderboard from "../pages/ranked-leaderboard";
+import * as PageRankedProfile from "../pages/ranked-profile";
+import * as PagePostMatch from "../pages/post-match";
 import * as PageAccountSettings from "../pages/account-settings";
 import * as PageTransition from "../states/page-transition";
 import * as AdController from "../controllers/ad-controller";
@@ -189,6 +193,10 @@ export async function change(
     404: Page404.page,
     accountSettings: PageAccountSettings.page,
     leaderboards: PageLeaderboards.page,
+    ranked: PageRanked.page,
+    rankedLeaderboard: PageRankedLeaderboard.page,
+    rankedProfile: PageRankedProfile.page,
+    postMatch: PagePostMatch.page,
   };
 
   const previousPage = pages[ActivePage.get()];

@@ -11,6 +11,8 @@ import * as Notifications from "../elements/notifications";
 import * as CustomText from "./custom-text";
 import * as CustomTextState from "../states/custom-text-name";
 import * as TestStats from "./test-stats";
+import { navigate } from "../controllers/route-controller";
+import { PostMatchPage } from "../pages/post-match";
 import * as PractiseWords from "./practise-words";
 import * as ShiftTracker from "./shift-tracker";
 import * as AltTracker from "./alt-tracker";
@@ -868,7 +870,7 @@ function buildCompletedEvent(
   return completedEvent;
 }
 
-export async function finish(difficultyFailed = false): Promise<void> {
+export async function finish(difficultyFailed = false, isRanked = false, matchId: string | null = null): Promise<void> {
   if (!TestState.isActive) return;
   TestUI.setResultCalculating(true);
   const now = performance.now();
@@ -1151,16 +1153,81 @@ export async function finish(difficultyFailed = false): Promise<void> {
     ConnectionState.showOfflineBanner();
   }
 
-  await Result.update(
-    completedEvent,
-    difficultyFailed,
-    failReason,
-    afkDetected,
-    TestState.isRepeated,
-    tooShort,
-    TestWords.currentQuote,
-    dontSave
-  );
+  if (isRanked && matchId) {
+    try {
+      const playerResult = {
+        wpm: completedEvent.wpm,
+        accuracy: completedEvent.acc,
+        rawWPM: completedEvent.rawWpm,
+        consistency: completedEvent.consistency,
+        duration: completedEvent.testDuration,
+        wordlist: completedEvent.words,
+      };
+      // Assuming a single-player ranked test for now, opponent is a dummy or fetched from matchId
+      // For a true 1v1, both players would submit their results and the backend would reconcile.
+      // Here, we'll assume the client submitting is player1 and a dummy opponent for now.
+      // In a real scenario, the matchId would contain details of both players.
+      const opponentUid = "dummy_opponent_uid"; // This needs to be dynamic based on matchmaking
+
+      const submitResponse = await fetch("/api/ranked/match/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchId,
+          playerUid: "current_user_uid", // Replace with actual user UID
+          opponentUid: opponentUid, // This needs to be dynamic
+          playerResult: playerResult,
+          opponentResult: playerResult, // Dummy opponent result for now
+          wordListSeed: "some_seed", // This needs to be dynamic from the match start
+        }),
+      });
+      const submitData = await submitResponse.json();
+
+      if (submitResponse.ok) {
+        console.log("Ranked match result submitted successfully:", submitData);
+        navigate("/post-match", { data: submitData });
+      } else {
+        console.error("Failed to submit ranked match result:", submitData);
+        Notifications.add(`Failed to submit ranked result: ${submitData.message}`, -1);
+        // Fallback to regular result display if ranked submission fails
+        await Result.update(
+          completedEvent,
+          difficultyFailed,
+          failReason,
+          afkDetected,
+          TestState.isRepeated,
+          tooShort,
+          TestWords.currentQuote,
+          dontSave
+        );
+      }
+    } catch (error) {
+      console.error("Error submitting ranked match result:", error);
+      Notifications.add("Error submitting ranked result.", -1);
+      // Fallback to regular result display if an error occurs
+      await Result.update(
+        completedEvent,
+        difficultyFailed,
+        failReason,
+        afkDetected,
+        TestState.isRepeated,
+        tooShort,
+        TestWords.currentQuote,
+        dontSave
+      );
+    }
+  } else {
+    await Result.update(
+      completedEvent,
+      difficultyFailed,
+      failReason,
+      afkDetected,
+      TestState.isRepeated,
+      tooShort,
+      TestWords.currentQuote,
+      dontSave
+    );
+  }
 
   if (completedEvent.chartData !== "toolong") {
     // @ts-expect-error TODO: check if this is needed
@@ -1574,5 +1641,12 @@ ConfigEvent.subscribe((eventKey, eventValue, nosave) => {
 
 TimerEvent.subscribe((eventKey, eventValue) => {
   if (eventKey === "fail" && eventValue !== undefined) fail(eventValue);
-  if (eventKey === "finish") void finish();
+  if (eventKey === "finish") {
+    const testData = TestState.getTestData();
+    if (testData && testData.ranked) {
+      void finish(false, true, testData.matchId);
+    } else {
+      void finish();
+    }
+  }
 });

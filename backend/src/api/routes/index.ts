@@ -11,6 +11,7 @@ import apeKeys from "./ape-keys";
 import admin from "./admin";
 import docs from "./docs";
 import webhooks from "./webhooks";
+import ranked from "./ranked";
 import dev from "./dev";
 import configs from "./configs";
 import configuration from "./configuration";
@@ -44,6 +45,7 @@ const APP_START_TIME = Date.now();
 
 const API_ROUTE_MAP = {
   "/docs": docs,
+  "/ranked": ranked,
 };
 
 const s = initServer();
